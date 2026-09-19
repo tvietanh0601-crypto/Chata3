@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phòng Chat Lớp Học</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl flex flex-col h-[85vh]">
+        
+        <!-- Header khung chat -->
+        <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/80 rounded-t-2xl">
+            <div>
+                <h1 class="text-base font-bold text-indigo-400">💬 Trò Chuyện Lớp Học</h1>
+                <p class="text-xs text-slate-400">Trao đổi và thảo luận cùng các bạn</p>
+            </div>
+            <a href="index.html" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-xl transition">Về trang chủ</a>
+        </div>
+
+        <!-- Khung hiển thị tin nhắn -->
+        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 flex flex-col">
+            <p class="text-slate-500 text-xs text-center my-auto">Đang tải tin nhắn...</p>
+        </div>
+
+        <!-- Khung nhập nội dung chat -->
+        <form onsubmit="sendMessage(event)" class="p-3 border-t border-slate-800 bg-slate-900/80 rounded-b-2xl flex gap-2">
+            <input type="text" id="chat-name" placeholder="Tên của bạn" required
+                class="w-1/3 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+            <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." required
+                class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-medium transition shadow-lg shadow-indigo-600/20">Gửi</button>
+        </form>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDSUygWMf9mKT_193O5vHJBS-w2LvTQnDE",
+            authDomain: "datai4.firebaseapp.com",
+            projectId: "datai4",
+            storageBucket: "datai4.firebasestorage.app",
+            messagingSenderId: "400943989929",
+            appId: "1:400943989929:web:a313a16c7166410b0355b8",
+            measurementId: "G-XKJMMSQZCD"
+        };
+
+        const db = getFirestore(initializeApp(firebaseConfig));
+        const messagesContainer = document.getElementById('chat-messages');
+
+        // Lắng nghe dữ liệu tin nhắn thời gian thực từ Firestore
+        const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
+        
+        onSnapshot(q, (snapshot) => {
+            messagesContainer.innerHTML = snapshot.empty ? '<p class="text-slate-500 text-xs text-center my-auto">Chưa có tin nhắn nào. Hãy mở lời trước nhé!</p>' : '';
+            
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const isMe = data.name === document.getElementById('chat-name').value.trim();
+                
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `flex flex-col max-w-[80%] ${isMe ? 'ml-auto items-end' : 'mr-auto items-start'} space-y-1`;
+                
+                msgDiv.innerHTML = `
+                    <span class="text-[10px] text-slate-400 px-1">${data.name || 'Ẩn danh'}</span>
+                    <div class="p-3 rounded-2xl text-xs ${isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-200 border border-slate-700/50 rounded-bl-none'}">
+                        ${escapeHtml(data.text)}
+                    </div>
+                `;
+                messagesContainer.appendChild(msgDiv);
+            });
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        });
+
+        // Hàm gửi tin nhắn lên Firebase
+        window.sendMessage = async (e) => {
+            e.preventDefault();
+            const nameInput = document.getElementById('chat-name');
+            const chatInput = document.getElementById('chat-input');
+            
+            const name = nameInput.value.trim();
+            const text = chatInput.value.trim();
+
+            if (name && text) {
+                try {
+                    await addDoc(collection(db, "messages"), {
+                        name: name,
+                        text: text,
+                        createdAt: serverTimestamp()
+                    });
+                    chatInput.value = '';
+                } catch (err) {
+                    console.error("Lỗi gửi tin nhắn:", err);
+                    alert("Không thể gửi tin nhắn, vui lòng thử lại!");
+                }
+            }
+        };
+
+        // Chống lỗi bảo mật XHTML cơ bản
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>
