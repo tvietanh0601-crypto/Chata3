@@ -3,41 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Điểm Danh Lớp Học</title>
+    <title>Đăng Nhập - Phòng Chat Lớp Học</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, sans-serif; }
+    </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
 
     <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
-        <h1 class="text-xl font-bold text-indigo-400 mb-1 text-center">🎓 Điểm Danh Lớp</h1>
-        <p class="text-xs text-slate-400 text-center mb-6">Nhập tên và mã PIN cá nhân của bạn</p>
-        
-        <form onsubmit="studentLogin(event)" class="space-y-4">
-            <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Họ và tên</label>
-                <input type="text" id="student-name" placeholder="Nhập họ tên của bạn" required
-                    class="w-full bg-slate-800 border border-slate-700 rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-indigo-500">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Mã PIN (4 số)</label>
-                <input type="password" id="student-pin" maxlength="4" placeholder="••••" required
-                    class="w-full bg-slate-800 border border-slate-700 rounded-xl py-2 px-3 text-white text-center text-lg tracking-widest focus:outline-none focus:border-indigo-500">
-            </div>
-            <div id="login-error" class="text-rose-400 text-xs text-center hidden">Tên hoặc mã PIN không chính xác!</div>
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl text-sm font-medium transition shadow-lg shadow-indigo-600/20">Xác Nhận</button>
-        </form>
-        
-        <div id="success-screen" class="hidden text-center py-6 space-y-3">
-            <div class="text-4xl">🎉</div>
-            <h2 class="text-lg font-bold text-emerald-400">Điểm danh thành công!</h2>
-            <p class="text-xs text-slate-400" id="welcome-msg"></p>
+        <div class="text-center mb-5">
+            <div class="text-3xl mb-1">🔐</div>
+            <h2 class="text-lg font-bold text-indigo-400">Đăng Nhập Lớp Học</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Nhập họ tên và mã PIN được cấp để vào phòng chat</p>
         </div>
+        <form id="student-login-form" class="space-y-3">
+            <input type="text" id="login-name" placeholder="Họ và tên của cậu..." autocomplete="off"
+                class="w-full bg-slate-800 border border-slate-700 rounded-xl py-2.5 px-3 text-xs text-white focus:outline-none focus:border-indigo-500" required>
+            <input type="password" id="login-pin" placeholder="Mã PIN (4 số)" maxlength="4" autocomplete="current-password"
+                class="w-full bg-slate-800 border border-slate-700 rounded-xl py-2.5 px-3 text-white text-center text-sm focus:outline-none focus:border-indigo-500 tracking-widest" required>
+            <div id="login-error" class="text-rose-400 text-xs text-center hidden font-medium">Sai tên hoặc mã PIN, kiểm tra lại nhé!</div>
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl text-xs font-medium transition shadow-lg shadow-indigo-600/25">Vào Phòng Chat</button>
+        </form>
     </div>
+
+    <footer class="text-center text-[10px] text-slate-500 mt-4">TranvietanhShop System</footer>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDSUygWMf9mKT_193O5vHJBS-w2LvTQnDE",
@@ -51,29 +45,36 @@
 
         const db = getFirestore(initializeApp(firebaseConfig));
 
-        window.studentLogin = async (e) => {
+        document.getElementById('student-login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const nameInput = document.getElementById('student-name').value.trim();
-            const pinInput = document.getElementById('student-pin').value.trim();
-            const errorEl = document.getElementById('login-error');
+            const inputName = document.getElementById('login-name').value.trim();
+            const inputPin = document.getElementById('login-pin').value.trim();
+            const errEl = document.getElementById('login-error');
 
             try {
-                const q = query(collection(db, "students"), where("name", "==", nameInput), where("pin", "==", pinInput));
-                const querySnapshot = await getDocs(q);
+                const snap = await getDocs(collection(db, "students"));
+                let matchedUser = null;
+                
+                snap.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    if (data.name.trim().toLowerCase() === inputName.toLowerCase() && data.pin === inputPin) {
+                        matchedUser = data.name;
+                    }
+                });
 
-                if (!querySnapshot.empty) {
-                    errorEl.classList.add('hidden');
-                    document.querySelector('form').classList.add('hidden');
-                    document.getElementById('welcome-msg').innerText = `Chào mừng ${nameInput} đã điểm danh!`;
-                    document.getElementById('success-screen').classList.remove('hidden');
+                if (matchedUser) {
+                    // Lưu tên chuẩn vào sessionStorage để chuyển sang trang chat
+                    sessionStorage.setItem('chat_user', matchedUser);
+                    // Chuyển hướng sang trang chat.html
+                    window.location.href = 'chat.html';
                 } else {
-                    errorEl.classList.remove('hidden');
+                    errEl.classList.remove('hidden');
                 }
             } catch (err) {
                 console.error(err);
-                alert("Lỗi kết nối cơ sở dữ liệu!");
+                alert("Lỗi kết nối kiểm tra tài khoản!");
             }
-        };
+        });
     </script>
 </body>
 </html>
