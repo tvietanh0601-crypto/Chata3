@@ -13,14 +13,14 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-    <!-- MÀN HÌNH KHÓA ADMIN (Yêu cầu nhập mật khẩu "9090") -->
+    <!-- MÀN HÌNH KHÓA ADMIN (Mật khẩu "9090") -->
     <div id="auth-screen" class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
         <div class="text-center mb-4">
             <div class="text-3xl mb-1">🔑</div>
             <h2 class="text-lg font-bold text-indigo-400">Đăng Nhập Quản Trị</h2>
             <p class="text-xs text-slate-400">Nhập mật khẩu để vào trang Admin</p>
         </div>
-        <form onsubmit="loginAdmin(event)" class="space-y-3">
+        <form id="login-form" class="space-y-3">
             <input type="password" id="admin-pass" placeholder="Mật khẩu admin" autocomplete="current-password"
                 class="w-full bg-slate-800 border border-slate-700 rounded-xl py-2.5 px-3 text-white text-center text-sm focus:outline-none focus:border-indigo-500 tracking-widest" required>
             <div id="admin-error" class="text-rose-400 text-xs text-center hidden font-medium">Sai mật khẩu quản trị!</div>
@@ -28,18 +28,18 @@
         </form>
     </div>
 
-    <!-- BẢNG ĐIỀU KHIỂN ADMIN (Ẩn đi cho đến khi nhập đúng mật khẩu) -->
+    <!-- BẢNG ĐIỀU KHIỂN ADMIN -->
     <div id="admin-dashboard" class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-2xl hidden space-y-4">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
             <div>
                 <h1 class="text-sm font-bold text-indigo-400">⚙️ Quản Lý Học Sinh</h1>
                 <p class="text-[11px] text-slate-400">Thêm hoặc đổi mã PIN hệ thống</p>
             </div>
-            <button onclick="logoutAdmin()" class="bg-rose-500/10 text-rose-400 text-xs px-3 py-1.5 rounded-xl font-medium border border-rose-500/20">Đăng xuất</button>
+            <button id="logout-btn" class="bg-rose-500/10 text-rose-400 text-xs px-3 py-1.5 rounded-xl font-medium border border-rose-500/20">Đăng xuất</button>
         </div>
 
         <!-- Form Thêm Học Sinh -->
-        <form onsubmit="addStudent(event)" class="flex gap-2">
+        <form id="add-student-form" class="flex gap-2">
             <input type="text" id="new-name" placeholder="Họ và tên học sinh..." autocomplete="off"
                 class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500" required>
             <input type="text" id="new-pin" placeholder="PIN (4 số)" maxlength="4" autocomplete="off"
@@ -63,11 +63,11 @@
                 <h3 class="text-sm font-semibold text-slate-200">Đổi mật khẩu PIN</h3>
                 <p id="edit-student-name" class="text-xs text-indigo-400 mt-0.5"></p>
             </div>
-            <form onsubmit="updateStudentPin(event)" class="space-y-3">
-                <input type="text" id="edit-pin" maxlength="4" placeholder="PIN mới (4 số)" autocomplete="off"
+            <form id="edit-pin-form" class="space-y-3">
+                <input type="text" id="edit-pin-input" maxlength="4" placeholder="PIN mới (4 số)" autocomplete="off"
                     class="w-full text-center text-base bg-slate-800 border border-slate-700 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-indigo-500" required>
                 <div class="flex gap-2">
-                    <button type="button" onclick="closeEditModal()" class="flex-1 bg-slate-800 text-slate-300 py-2 rounded-xl text-xs font-medium">Hủy</button>
+                    <button type="button" id="cancel-edit-btn" class="flex-1 bg-slate-800 text-slate-300 py-2 rounded-xl text-xs font-medium">Hủy</button>
                     <button type="submit" class="flex-1 bg-indigo-600 text-white py-2 rounded-xl text-xs font-medium shadow-md">Lưu</button>
                 </div>
             </form>
@@ -93,12 +93,12 @@
         const db = getFirestore(initializeApp(firebaseConfig));
         let editingId = null;
 
-        // Mã hóa Base64 cho mật khẩu "9090"
+        // Mật khẩu "9090" mã hóa Base64
         const _x0 = "OTA5MA==";
         function getSecretAdminPin() { return atob(_x0); }
 
-        // Đăng nhập Admin
-        window.loginAdmin = (e) => {
+        // Xử lý Đăng Nhập
+        document.getElementById('login-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const pass = document.getElementById('admin-pass').value;
             const errEl = document.getElementById('admin-error');
@@ -110,88 +110,121 @@
             } else {
                 errEl.classList.remove('hidden');
             }
-        };
+        });
 
-        window.logoutAdmin = () => {
+        // Xử lý Đăng Xuất
+        document.getElementById('logout-btn').addEventListener('click', () => {
             document.getElementById('admin-dashboard').classList.add('hidden');
             document.getElementById('auth-screen').classList.remove('hidden');
             document.getElementById('admin-pass').value = '';
-        };
+        });
 
-        // Tải danh sách học sinh từ Firestore
+        // Tải danh sách học sinh
         async function loadStudentsAdmin() {
             const listEl = document.getElementById('admin-student-list');
             try {
                 const snap = await getDocs(collection(db, "students"));
                 listEl.innerHTML = snap.empty ? '<p class="text-slate-500 text-xs text-center py-4">Chưa có học sinh nào.</p>' : '';
+                
                 snap.forEach((docSnap) => {
                     const data = docSnap.data(), id = docSnap.id;
                     const item = document.createElement('div');
                     item.className = "flex items-center justify-between p-2.5 bg-slate-800/60 border border-slate-700/50 rounded-xl text-xs";
-                    item.innerHTML = `<div><span class="font-medium text-slate-200">${data.name}</span> <span class="ml-2 font-mono bg-slate-700 px-1.5 py-0.5 rounded text-slate-300">PIN: ${data.pin}</span></div>
+                    item.innerHTML = `
+                        <div>
+                            <span class="font-medium text-slate-200">${escapeHtml(data.name)}</span> 
+                            <span class="ml-2 font-mono bg-slate-700 px-1.5 py-0.5 rounded text-slate-300">PIN: ${data.pin}</span>
+                        </div>
                         <div class="flex gap-1.5">
-                            <button onclick="openEdit('${id}', '${data.name}')" class="text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-lg font-medium">Sửa</button>
-                            <button onclick="deleteStu('${id}')" class="text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-lg font-medium">Xóa</button>
+                            <button data-action="edit" data-id="${id}" data-name="${escapeHtml(data.name)}" class="text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-lg font-medium">Sửa</button>
+                            <button data-action="delete" data-id="${id}" class="text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-lg font-medium">Xóa</button>
                         </div>`;
                     listEl.appendChild(item);
                 });
+
+                // Gắn sự kiện cho các nút Sửa/Xóa mới sinh ra
+                listEl.querySelectorAll('button').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const action = e.target.getAttribute('data-action');
+                        const id = e.target.getAttribute('data-id');
+                        if (action === 'edit') {
+                            const name = e.target.getAttribute('data-name');
+                            openEditModal(id, name);
+                        } else if (action === 'delete') {
+                            if (confirm("Cậu có chắc muốn xóa học sinh này không?")) {
+                                await deleteDoc(doc(db, "students", id));
+                                loadStudentsAdmin();
+                            }
+                        }
+                    });
+                });
             } catch (err) {
                 console.error(err);
-                listEl.innerHTML = '<p class="text-rose-400 text-xs text-center py-4">Lỗi tải dữ liệu!</p>';
+                listEl.innerHTML = '<p class="text-rose-400 text-xs text-center py-4">Lỗi tải dữ liệu từ Firestore!</p>';
             }
         }
 
-        // Thêm học sinh mới
-        window.addStudent = async (e) => {
+        // Xử lý Thêm Học Sinh
+        document.getElementById('add-student-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const name = document.getElementById('new-name').value.trim();
-            const pin = document.getElementById('new-pin').value.trim();
+            const nameInput = document.getElementById('new-name');
+            const pinInput = document.getElementById('new-pin');
+            const name = nameInput.value.trim();
+            const pin = pinInput.value.trim();
+
             if (name && pin.length === 4) {
                 try {
                     await addDoc(collection(db, "students"), { name, pin });
-                    document.getElementById('new-name').value = '';
-                    document.getElementById('new-pin').value = '';
+                    nameInput.value = '';
+                    pinInput.value = '';
                     loadStudentsAdmin();
                 } catch (err) {
-                    alert("Không thể thêm! Hãy kiểm tra lại kết nối.");
+                    alert("Không thể thêm! Hãy kiểm tra lại kết nối mạng.");
                 }
             } else {
                 alert("Vui lòng điền tên và mã PIN gồm đúng 4 chữ số!");
             }
-        };
+        });
 
-        // Modal sửa PIN
-        window.openEdit = (id, name) => {
+        // Modal Sửa PIN
+        function openEditModal(id, name) {
             editingId = id;
             document.getElementById('edit-student-name').innerText = `Học sinh: ${name}`;
-            document.getElementById('edit-pin').value = '';
+            document.getElementById('edit-pin-input').value = '';
             document.getElementById('edit-modal').classList.replace('hidden', 'flex');
-        };
+        }
 
-        window.closeEditModal = () => {
+        document.getElementById('cancel-edit-btn').addEventListener('click', () => {
             document.getElementById('edit-modal').classList.replace('flex', 'hidden');
             editingId = null;
-        };
+        });
 
-        window.updateStudentPin = async (e) => {
+        document.getElementById('edit-pin-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const newPin = document.getElementById('edit-pin').value.trim();
+            const newPin = document.getElementById('edit-pin-input').value.trim();
             if (editingId && newPin.length === 4) {
-                await updateDoc(doc(db, "students", editingId), { pin: newPin });
-                closeEditModal();
-                loadStudentsAdmin();
+                try {
+                    await updateDoc(doc(db, "students", editingId), { pin: newPin });
+                    document.getElementById('edit-modal').classList.replace('flex', 'hidden');
+                    editingId = null;
+                    loadStudentsAdmin();
+                } catch (err) {
+                    alert("Không thể cập nhật PIN!");
+                }
             } else {
                 alert("Mã PIN mới phải đủ 4 chữ số!");
             }
-        };
+        });
 
-        // Xóa học sinh
-        window.deleteStu = async (id) => {
-            if (confirm("Cậu có chắc muốn xóa học sinh này không?")) {
-                await deleteDoc(doc(db, "students", id));
-                loadStudentsAdmin();
-            }
-        };
+        // Hàm phụ trợ chống lỗi ký tự HTML
+        function escaparHtml(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
     </script>
 </body>
 </html>
