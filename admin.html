@@ -3,169 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trang Quản Trị - Lớp Học</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="styles.css">
+    <title>Quản lý Học Sinh - Không sợ đơ nút</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h2 { text-align: center; color: #333; }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:active { background-color: #218838; }
+        .error-msg {
+            color: red;
+            font-size: 13px;
+            margin-top: 5px;
+            display: block;
+        }
+        ul { padding-left: 20px; margin-top: 20px; }
+        li { margin-bottom: 8px; font-size: 15px; }
+        .btn-xoa {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+    </style>
 </head>
-<body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
+<body>
 
-    <!-- Màn hình khóa Admin -->
-    <div id="auth-screen" class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl mt-20">
-        <h2 class="text-xl font-bold text-indigo-400 mb-1 text-center">🔑 Quản Trị Hệ Thống</h2>
-        <p class="text-xs text-slate-400 text-center mb-4">Nhập mật khẩu quản trị lớp học</p>
-        <form onsubmit="loginAdmin(event)">
-            <input type="password" id="admin-pass" placeholder="Mật khẩu admin" 
-                class="w-full bg-slate-800 border border-slate-700 rounded-xl py-2 px-3 text-white text-center mb-3 focus:outline-none focus:border-indigo-500 text-sm" required>
-            <div id="admin-error" class="text-rose-400 text-xs mb-3 text-center hidden">Sai mật khẩu!</div>
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl text-sm font-medium transition shadow-lg shadow-indigo-600/20">Truy Cập</button>
-        </form>
-    </div>
-
-    <!-- Bảng điều khiển Admin -->
-    <div id="admin-dashboard" class="w-full max-w-xl hidden space-y-6">
-        <div class="flex items-center justify-between bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl">
-            <div>
-                <h1 class="text-lg font-bold text-indigo-400">⚙️ Quản Lý Thành Viên Lớp</h1>
-                <p class="text-xs text-slate-400">Thêm học sinh hoặc cấp lại mã PIN</p>
-            </div>
-            <button onclick="logoutAdmin()" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs px-3 py-2 rounded-xl font-medium transition border border-rose-500/20">Đăng xuất</button>
+<div class="container">
+    <h2>Thêm Học Sinh</h2>
+    
+    <!-- Dùng form nhưng được bảo vệ bằng e.preventDefault() -->
+    <form id="studentForm">
+        <div class="form-group">
+            <label for="txtName">Họ và tên:</label>
+            <input type="text" id="txtName" placeholder="Nhập tên học sinh..." autocomplete="off">
+            <span id="nameError" class="error-msg"></span>
         </div>
 
-        <!-- Form thêm học sinh -->
-        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl">
-            <h2 class="text-sm font-semibold text-slate-200 mb-3">Thêm học sinh mới</h2>
-            <form onsubmit="addStudent(event)" class="flex gap-3">
-                <input type="text" id="new-name" placeholder="Họ và tên" required
-                    class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-                <input type="text" id="new-pin" placeholder="PIN (4 số)" maxlength="4" required
-                    class="w-28 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white text-center focus:outline-none focus:border-indigo-500">
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition">Thêm</button>
-            </form>
+        <div class="form-group">
+            <label for="txtPin">Mã PIN (4 chữ số):</label>
+            <input type="number" id="txtPin" placeholder="Ví dụ: 1234" maxlength="4">
+            <span id="pinError" class="error-msg"></span>
         </div>
 
-        <!-- Danh sách -->
-        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl">
-            <h2 class="text-sm font-semibold text-slate-200 mb-3">Danh sách thành viên</h2>
-            <div id="admin-student-list" class="space-y-2 max-h-80 overflow-y-auto pr-1">
-                <p class="text-slate-500 text-xs text-center py-4">Đang tải danh sách...</p>
-            </div>
-        </div>
-    </div>
+        <button type="submit" id="btnAdd">Thêm ngay</button>
+    </form>
 
-    <!-- Modal sửa PIN -->
-    <div id="edit-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-xs shadow-2xl">
-            <h3 class="text-base font-semibold text-slate-200 mb-1">Đổi mật khẩu PIN</h3>
-            <p id="edit-student-name" class="text-xs text-indigo-400 mb-4"></p>
-            <form onsubmit="updateStudentPin(event)">
-                <input type="text" id="edit-pin" maxlength="4" placeholder="Mã PIN mới (4 số)" required
-                    class="w-full text-center text-lg bg-slate-800 border border-slate-700 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-indigo-500 mb-4">
-                <div class="flex space-x-2">
-                    <button type="button" onclick="closeEditModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-xl text-xs font-medium transition">Hủy</button>
-                    <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl text-xs font-medium transition">Lưu</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    <h3>Danh sách đã thêm:</h3>
+    <ul id="displayList"></ul>
+</div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+<script>
+    // 1. Khai báo các phần tử an toàn (Kiểm tra null để tránh crash code)
+    const form = document.getElementById('studentForm');
+    const nameInput = document.getElementById('txtName');
+    const pinInput = document.getElementById('txtPin');
+    const displayList = document.getElementById('displayList');
+    const nameError = document.getElementById('nameError');
+    const pinError = document.getElementById('pinError');
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDSUygWMf9mKT_193O5vHJBS-w2LvTQnDE",
-            authDomain: "datai4.firebaseapp.com",
-            projectId: "datai4",
-            storageBucket: "datai4.firebasestorage.app",
-            messagingSenderId: "400943989929",
-            appId: "1:400943989929:web:a313a16c7166410b0355b8",
-            measurementId: "G-XKJMMSQZCD"
-        };
+    // 2. Tải dữ liệu từ LocalStorage (Dùng try-catch phòng trường hợp bộ nhớ trình duyệt bị lỗi)
+    let studentList = [];
+    try {
+        const savedData = localStorage.getItem('safe_student_list');
+        if (savedData) {
+            studentList = JSON.parse(savedData);
+        }
+    } catch (err) {
+        console.error("Lỗi đọc LocalStorage:", err);
+        studentList = [];
+    }
 
-        const db = getFirestore(initializeApp(firebaseConfig));
-        let editingId = null;
-
-        // Mã hóa Base64 ngầm mật khẩu "9090"
-        const _x0 = "OTA5MA==";
-        function getSecretAdminPin() { return atob(_x0); }
-
-        window.loginAdmin = (e) => {
-            e.preventDefault();
-            const pass = document.getElementById('admin-pass').value;
-            if (pass === getSecretAdminPin()) {
-                document.getElementById('auth-screen').classList.add('hidden');
-                document.getElementById('admin-dashboard').classList.remove('hidden');
-                loadStudents();
-            } else {
-                document.getElementById('admin-error').classList.remove('hidden');
-            }
-        };
-
-        window.logoutAdmin = () => {
-            document.getElementById('admin-dashboard').classList.add('hidden');
-            document.getElementById('auth-screen').classList.remove('hidden');
-            document.getElementById('admin-pass').value = '';
-        };
-
-        async function loadStudents() {
-            const listEl = document.getElementById('admin-student-list');
-            try {
-                const snap = await getDocs(collection(db, "students"));
-                listEl.innerHTML = snap.empty ? '<p class="text-slate-500 text-xs text-center py-4">Chưa có học sinh nào.</p>' : '';
-                snap.forEach((docSnap) => {
-                    const data = docSnap.data(), id = docSnap.id;
-                    const item = document.createElement('div');
-                    item.className = "flex items-center justify-between p-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-sm";
-                    item.innerHTML = `<div><span class="font-medium text-slate-200">${data.name}</span><span class="ml-3 text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded font-mono">PIN: ${data.pin}</span></div>
-                        <div class="flex space-x-2">
-                            <button onclick="openEdit('${id}', '${data.name}')" class="bg-indigo-500/10 text-indigo-400 text-xs px-3 py-1.5 rounded-lg font-medium transition">Sửa PIN</button>
-                            <button onclick="deleteStu('${id}')" class="bg-rose-500/10 text-rose-400 text-xs px-3 py-1.5 rounded-lg font-medium transition">Xóa</button>
-                        </div>`;
-                    listEl.appendChild(item);
-                });
-            } catch (err) { console.error(err); }
+    // 3. Hàm render danh sách ra màn hình
+    function renderList() {
+        displayList.innerHTML = '';
+        
+        if (studentList.length === 0) {
+            displayList.innerHTML = '<li style="color: #888; list-style: none;">Chưa có học sinh nào.</li>';
+            return;
         }
 
-        window.addStudent = async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('new-name').value.trim();
-            const pin = document.getElementById('new-pin').value.trim();
-            if (name && pin.length === 4) {
-                await addDoc(collection(db, "students"), { name, pin });
-                document.getElementById('new-name').value = '';
-                document.getElementById('new-pin').value = '';
-                loadStudents();
-            } else { alert("Vui lòng điền đầy đủ tên và mã PIN đúng 4 số!"); }
-        };
+        studentList.forEach((item, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<b>${item.name}</b> (PIN: ${item.pin}) 
+                            <button class="btn-xoa" onclick="deleteStudent(${index})">Xóa</button>`;
+            displayList.appendChild(li);
+        });
+    }
 
-        window.openEdit = (id, name) => { 
-            editingId = id; 
-            document.getElementById('edit-student-name').innerText = `Học sinh: ${name}`; 
-            document.getElementById('edit-pin').value = ''; 
-            document.getElementById('edit-modal').classList.replace('hidden', 'flex'); 
-        };
+    // Chạy hiển thị lần đầu
+    renderList();
 
-        window.closeEditModal = () => { 
-            document.getElementById('edit-modal').classList.replace('flex', 'hidden'); 
-            editingId = null; 
-        };
+    // 4. Bắt sự kiện SUBMIT với lớp phòng thủ cực mạnh
+    form.addEventListener('submit', function(e) {
+        // [CHẶN 1] Bắt buộc chặn reload trang làm đơ và mất dữ liệu form
+        e.preventDefault(); 
 
-        window.updateStudentPin = async (e) => {
-            e.preventDefault();
-            const newPin = document.getElementById('edit-pin').value.trim();
-            if (editingId && newPin.length === 4) {
-                await updateDoc(doc(db, "students", editingId), { pin: newPin });
-                closeEditModal();
-                loadStudents();
-            } else { alert("Mã PIN phải đủ 4 chữ số!"); }
-        };
+        // Xóa sạch thông báo lỗi cũ
+        nameError.textContent = '';
+        pinError.textContent = '';
 
-        window.deleteStu = async (id) => {
-            if (confirm("Xóa học sinh này?")) { 
-                await deleteDoc(doc(db, "students", id)); 
-                loadStudents(); 
-            }
-        };
-    </script>
+        // Lấy giá trị và loại bỏ khoảng trắng thừa
+        const nameVal = nameInput.value.trim();
+        const pinVal = pinInput.value.trim();
+
+        let hasError = false;
+
+        // [CHẶN 2] Kiểm tra tên trống
+        if (!nameVal) {
+            nameError.textContent = 'Vui lòng không để trống tên học sinh!';
+            hasError = true;
+        }
+
+        // [CHẶN 3] Kiểm tra mã PIN (Bắt buộc đủ 4 số, không âm, không để trống)
+        if (!pinVal || pinVal.length !== 4 || isNaN(pinVal)) {
+            pinError.textContent = 'Mã PIN phải là dãy số gồm đúng 4 chữ số!';
+            hasError = true;
+        }
+
+        // Nếu có lỗi -> Dừng lại ngay lập tức, không cho chạy tiếp tránh kẹt code
+        if (hasError) {
+            return;
+        }
+
+        // [CHẶN 4] Thêm dữ liệu vào mảng an toàn
+        try {
+            studentList.push({
+                name: nameVal,
+                pin: pinVal,
+                time: new Date().getTime()
+            });
+
+            // Lưu vào LocalStorage
+            localStorage.setItem('safe_student_list', JSON.stringify(studentList));
+
+            // Cập nhật lại giao diện
+            renderList();
+
+            // Reset form sạch sẽ để nhập tiếp
+            nameInput.value = '';
+            pinInput.value = '';
+            nameInput.focus(); // Đưa con trỏ chuột về ô nhập tên cho mượt
+
+            console.log("Thêm thành công học sinh mới!");
+
+        } catch (storageErr) {
+            alert("Lỗi lưu trữ dữ liệu trên thiết bị: " + storageErr.message);
+        }
+    });
+
+    // 5. Hàm xóa phụ trợ (để quản lý danh sách dễ hơn)
+    window.deleteStudent = function(index) {
+        studentList.splice(index, 1);
+        localStorage.setItem('safe_student_list', JSON.stringify(studentList));
+        renderList();
+    };
+</script>
+
 </body>
 </html>
